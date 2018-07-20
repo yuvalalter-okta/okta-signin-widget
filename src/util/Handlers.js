@@ -10,9 +10,11 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-define(['util/Logger'], function (Logger) {
+define(['okta', 'util/Logger', 'util/OAuth2Util'], function (Okta, Logger, Util) {
 
   var Handlers = {};
+  var _ = Okta._;
+
 
   Handlers.defaultSuccessTokenHandler = function(tokenManager, keys = {}) {
     /**
@@ -45,6 +47,36 @@ define(['util/Logger'], function (Logger) {
      * response using the window.console in "error" form.
      */
     Logger.error(err.toString());
+  };
+
+  Handlers.filterOAuthRedirectParams = function(options, config) {
+    // Override specific OAuth/OIDC values
+    var renderOptions = {
+      el: options.el,
+      clientId: options.clientId,
+      redirectUri: options.redirectUri,
+      authParams: {
+        display: 'page',
+        responseMode: 'fragment',
+        responseType: Util.getResponseType(options),
+        scopes: options.scope || (config.authParams && config.authParams.scopes) || ['openid']
+      }
+    };
+
+    if (options.authorizationServerId) {
+      // Map the authorizationServerId to issuer
+      renderOptions.authParams.issuer = options.authorizationServerId;
+    }
+
+    // Override undefined values with SignIn config
+    // This will include buttons, assets, etc.
+    _.defaults(renderOptions, config);
+
+    // Ensure the 'openid' scope is provided when an 'id_token' is requested.
+    // If the 'openid' scope is present and isn't needed, remove it.
+    renderOptions.authParams.scopes = Util.scrubScopes(renderOptions.authParams);
+
+    return renderOptions;
   };
 
   return Handlers;

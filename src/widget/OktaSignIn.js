@@ -155,9 +155,20 @@ var OktaSignIn = (function () {
       .fail(handlers.defaultErrorHandler);
     }
 
+    /**
+     * Renders the Widget with opinionated defaults for the full-page
+     * redirect flow.
+     * @param options - options for the signin widget
+     */
+    function showSignInToGetTokens(options) {
+      var renderOptions = handlers.filterOAuthRedirectParams(options, config);
+      return render(renderOptions);
+    }
+
     // Properties exposed on OktaSignIn object.
     return {
       renderEl: render,
+      showSignInToGetTokens: showSignInToGetTokens,
       signOut: closeSession,
       idToken: {
         refresh: refreshIdToken
