@@ -57,6 +57,11 @@ else {
       args: [ '--headless', '--disable-gpu', '--window-size=800,600' ]
     }
   };
+
+  if (process.env.SKIP_HEADLESS) {
+    // REQUIRED for Bacon tasks
+    config.capabilities.chromeOptions = {};
+  }
 }
 
 module.exports.config = config;
