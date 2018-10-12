@@ -5,8 +5,8 @@ const fs = require('fs-extra');
 const path = require('path');
 
 // run npm pack
-console.log('Running npm pack');
-const output = execSync('npm pack').toString();
+console.log('Running yarn pack');
+const output = execSync('yarn pack').toString();
 const filename = output.split('\n').slice(-2)[0];
 if (!filename) {
   console.log(output);

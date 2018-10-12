@@ -102,7 +102,13 @@ To install [@okta/okta-signin-widget](https://www.npmjs.com/package/@okta/okta-s
 
 ```bash
 # Run this command in your project root folder.
-npm install @okta/okta-signin-widget --save
+
+## yarn
+yarn add --save @okta/okta-signin-widget --save
+
+## npm
+npm install --save @okta/okta-signin-widget
+
 ```
 
 The widget source files and assets will be installed to `node_modules/@okta/okta-signin-widget/dist`, and will have this directory structure:
@@ -130,7 +136,7 @@ node_modules/@okta/okta-signin-widget/dist/
 
     # Main entry file that is used in the npm require(@okta/okta-signin-widget)
     # flow. This does not package 3rd party dependencies - these are pulled
-    # down through `npm install` (which allows you to use your own version of
+    # down through `yarn install` (which allows you to use your own version of
     # jquery, etc).
     okta-sign-in.entry.js
 
@@ -148,7 +154,7 @@ node_modules/@okta/okta-signin-widget/dist/
   sass/
 ```
 
-After running `npm install`:
+After running `@okta/okta-signin-widget`:
 
 1. Copy the assets to a folder that will be distributed to your publicly hosted site. The folders you'll need to copy are `css`, `font`, `img`, `js` and `labels`.
 
