@@ -24,6 +24,8 @@ OKTA_REGISTRY=${ARTIFACTORY_URL}/api/npm/npm-okta-master
 # Replace yarn artifactory with Okta's
 # sed -i "s#${YARN_REGISTRY}#${OKTA_REGISTRY}#g" yarn.lock
 rm -f yarn.lock
+ls -al
+cat ~/.npmrc
 
 if ! yarn install; then
   echo "yarn install failed! Exiting..."
