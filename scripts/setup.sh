@@ -9,12 +9,6 @@ if ! bundle install; then
   exit ${FAILED_SETUP}
 fi
 
-
-# Install required dependencies
-yarn global add @okta/ci-update-package
-yarn global add @okta/ci-pkginfo
-export PATH="${PATH}:$(yarn global bin)"
-
 # Yarn does not utilize the npmrc/yarnrc registry configuration
 # if a lockfile is present. This results in `yarn install` problems
 # for private registries. Until yarn@2.0.0 is released, this is our current
@@ -28,7 +22,8 @@ YARN_REGISTRY=https://registry.yarnpkg.com
 OKTA_REGISTRY=${ARTIFACTORY_URL}/api/npm/npm-okta-master
 
 # Replace yarn artifactory with Okta's
-sed -i "s#${YARN_REGISTRY}#${OKTA_REGISTRY}#" yarn.lock
+# sed -i "s#${YARN_REGISTRY}#${OKTA_REGISTRY}#g" yarn.lock
+rm -f yarn.lock
 
 if ! yarn install; then
   echo "yarn install failed! Exiting..."
@@ -36,7 +31,7 @@ if ! yarn install; then
 fi
 
 # Revert the origional change
-sed -i "s#${OKTA_REGISTRY}#${YARN_REGISTRY}#" yarn.lock
+# sed -i "s#${OKTA_REGISTRY}#${YARN_REGISTRY}#" yarn.lock
 
 if ! yarn build:release; then
   echo "yarn build release failed! Exiting..."
