@@ -12,6 +12,7 @@ build2
 .DS_Store
 *.iml
 .idea
+.npmrc
 
 # These paths should be included in the published artifact, but not the repo
 /dist
