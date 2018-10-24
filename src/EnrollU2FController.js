@@ -66,6 +66,7 @@ function (Okta, FormType, FormController, FidoUtil, Footer, Q, HtmlErrorMessageV
             self.trigger('errors:clear');
             if (data.errorCode && data.errorCode !== 0) {
               deferred.reject({
+                errorCode: data.errorCode,
                 xhr: {
                   responseJSON: {
                     errorSummary: FidoUtil.getU2fEnrollErrorMessageByCode(data.errorCode)

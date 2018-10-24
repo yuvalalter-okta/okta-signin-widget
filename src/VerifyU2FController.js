@@ -63,6 +63,7 @@ function (Okta, FormController, FormType, FooterSignout, Q, FactorUtil, FidoUtil
               if (data.errorCode && data.errorCode !== 0) {
                 var isOneFactor = self.options.appState.get('factors').length === 1;
                 deferred.reject({
+                  errorCode: data.errorCode,
                   xhr: {
                     responseJSON: {
                       errorSummary: FidoUtil.getU2fVerifyErrorMessageByCode(data.errorCode, isOneFactor)

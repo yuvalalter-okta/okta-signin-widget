@@ -26,12 +26,14 @@ function (Okta, OktaAuth, Util, RecoveryQuestionForm, Beacon, Expect, Router,
     var setNextResponse = Util.mockAjax();
     var baseUrl = 'https://foo.com';
     var authClient = new OktaAuth({url: baseUrl});
+    var errorSpy = jasmine.createSpy('errorSpy');
     var router = new Router(_.extend({
       el: $sandbox,
       baseUrl: baseUrl,
       features: { securityImage: true },
       authClient: authClient
     }, settings));
+    router.on('error', errorSpy);
     var form = new RecoveryQuestionForm($sandbox);
     var beacon = new Beacon($sandbox);
     Util.registerRouter(router);
@@ -47,7 +49,8 @@ function (Okta, OktaAuth, Util, RecoveryQuestionForm, Beacon, Expect, Router,
       form: form,
       beacon: beacon,
       ac: authClient,
-      setNextResponse: setNextResponse
+      setNextResponse: setNextResponse,
+      errorSpy: errorSpy
     });
   }
 
@@ -237,6 +240,31 @@ function (Okta, OktaAuth, Util, RecoveryQuestionForm, Beacon, Expect, Router,
       .then(function (test) {
         expect(test.form.hasErrors()).toBe(true);
         expect(test.form.errorMessage()).toBe('The recovery question answer did not match our records.');
+      });
+    });
+    itp('triggers an error event if there is an error submitting the answer', function () {
+      return setup()
+      .then(function (test) {
+        test.setNextResponse(resError);
+        test.form.setAnswer('4444');
+        test.form.submit();
+        return tick(test);
+      })
+      .then(function (test) {
+        expect(test.errorSpy.calls.count()).toBe(1);
+        expect(test.errorSpy.calls.allArgs()[0]).toEqual([
+          {
+            statusCode: 400,
+            error: jasmine.objectContaining({
+              name: 'AuthApiError',
+              message: 'The recovery question answer did not match our records.'
+            })
+          },
+          {
+            controller: 'recovery-question',
+            stateToken: 'testStateToken'
+          }
+        ]);
       });
     });
   });

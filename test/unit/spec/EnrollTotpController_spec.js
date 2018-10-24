@@ -40,13 +40,14 @@ function (Okta, OktaAuth, LoginUtil, Util, DeviceTypeForm, BarcodeForm,
       var setNextResponse = Util.mockAjax();
       var baseUrl = 'https://foo.com';
       var authClient = new OktaAuth({url: baseUrl, transformErrorXHR: LoginUtil.transformErrorXHR});
-
+      var errorSpy = jasmine.createSpy('errorSpy');
       var router = new Router(_.extend({
         el: $sandbox,
         baseUrl: baseUrl,
         authClient: authClient,
         'features.router': startRouter
       }, settings));
+      router.on('error', errorSpy);
       Util.registerRouter(router);
       Util.mockRouterNavigate(router, startRouter);
 
@@ -67,7 +68,8 @@ function (Okta, OktaAuth, LoginUtil, Util, DeviceTypeForm, BarcodeForm,
           passCodeForm: new PassCodeForm($sandbox),
           linkSentConfirmation: new LinkSentConfirmation($sandbox),
           ac: authClient,
-          setNextResponse: setNextResponse
+          setNextResponse: setNextResponse,
+          errorSpy: errorSpy
         });
       });
     }
@@ -413,6 +415,35 @@ function (Okta, OktaAuth, LoginUtil, Util, DeviceTypeForm, BarcodeForm,
           .then(function (test) {
             expect(test.passCodeForm.hasErrors()).toBe(true);
             expect(test.form.errorMessage()).toBe('Api validation failed: factorEnrollRequest');
+          });
+        });
+        itp('triggers an error event in case of an error response', function () {
+          return setupAndEnrollOktaTotp().then(function (test) {
+            test.scanCodeForm.submit();
+            return Expect.waitForActivateTotp(test);
+          })
+          .then(function (test) {
+            Expect.isVisible(test.passCodeForm.form());
+            test.setNextResponse(resActivateError);
+            test.passCodeForm.setCode(123);
+            test.passCodeForm.submit();
+            return tick(test);
+          })
+          .then(function (test) {
+            expect(test.errorSpy.calls.count()).toBe(1);
+            expect(test.errorSpy.calls.allArgs()[0]).toEqual([
+              {
+                statusCode: 400,
+                error: jasmine.objectContaining({
+                  name: 'AuthApiError',
+                  message: 'Api validation failed: factorEnrollRequest'
+                })
+              },
+              {
+                controller: 'activate-totp',
+                stateToken: 'testStateToken'
+              }
+            ]);
           });
         });
         itp('calls activate with the right params', function () {

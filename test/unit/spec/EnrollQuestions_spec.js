@@ -31,12 +31,14 @@ function (Q, Okta, OktaAuth, Util, Form, Beacon, Expect, Router, BrowserFeatures
       var setNextResponse = Util.mockAjax();
       var baseUrl = 'https://foo.com';
       var authClient = new OktaAuth({url: baseUrl, transformErrorXHR: LoginUtil.transformErrorXHR});
+      var errorSpy = jasmine.createSpy('errorSpy');
       var router = new Router({
         el: $sandbox,
         baseUrl: baseUrl,
         authClient: authClient,
         'features.router': startRouter
       });
+      router.on('error', errorSpy);
       Util.registerRouter(router);
       Util.mockRouterNavigate(router, startRouter);
       return tick()
@@ -56,7 +58,8 @@ function (Q, Okta, OktaAuth, Util, Form, Beacon, Expect, Router, BrowserFeatures
           beacon: new Beacon($sandbox),
           form: new Form($sandbox),
           ac: authClient,
-          setNextResponse: setNextResponse
+          setNextResponse: setNextResponse,
+          errorSpy: errorSpy
         });
       });
     }
@@ -217,6 +220,32 @@ function (Q, Okta, OktaAuth, Util, Form, Beacon, Expect, Router, BrowserFeatures
       .then(function (test) {
         expect(test.form.hasErrors()).toBe(true);
         expect(test.form.errorMessage()).toBe('Invalid Profile.');
+      });
+    });
+    itp('triggers an error event if error response on enrollment', function () {
+      return setup()
+      .then(function (test) {
+        Q.stopUnhandledRejectionTracking();
+        test.setNextResponse(resError);
+        test.form.setAnswer('the answer');
+        test.form.submit();
+        return tick(test);
+      })
+      .then(function (test) {
+        expect(test.errorSpy.calls.count()).toBe(1);
+        expect(test.errorSpy.calls.allArgs()[0]).toEqual([
+          {
+            statusCode: 400,
+            error: jasmine.objectContaining({
+              name: 'AuthApiError',
+              message: 'Api validation failed: factorEnrollRequest'
+            })
+          },
+          {
+            controller: 'enroll-question',
+            stateToken: 'testStateToken'
+          }
+        ]);
       });
     });
     itp('returns to factor list when back link is clicked', function () {

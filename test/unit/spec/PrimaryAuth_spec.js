@@ -1,4 +1,4 @@
-/* eslint max-params:[2, 30], max-statements:[2, 41], camelcase:0, max-len:[2, 180] */
+/* eslint max-params:[2, 30], max-statements:[2, 44], camelcase:0, max-len:[2, 180] */
 define([
   'q',
   '@okta/okta-auth-js/jquery',
@@ -77,6 +77,7 @@ function (Q, OktaAuth, LoginUtil, Okta, Util, AuthContainer, PrimaryAuthForm, Be
     var baseUrl = 'https://foo.com';
     var authClient = new OktaAuth({url: baseUrl, transformErrorXHR: LoginUtil.transformErrorXHR, headers: {}});
     var successSpy = jasmine.createSpy('success');
+    var errorSpy = jasmine.createSpy('errorSpy');
 
     var router = new Router(_.extend({
       el: $sandbox,
@@ -88,6 +89,7 @@ function (Q, OktaAuth, LoginUtil, Okta, Util, AuthContainer, PrimaryAuthForm, Be
     var authContainer = new AuthContainer($sandbox);
     var form = new PrimaryAuthForm($sandbox);
     var beacon = new Beacon($sandbox);
+    router.on('error', errorSpy);
     if (refreshState) {
       Util.mockRouterNavigate(router);
       setNextResponse(resUnauthenticated);
@@ -103,7 +105,8 @@ function (Q, OktaAuth, LoginUtil, Okta, Util, AuthContainer, PrimaryAuthForm, Be
       beacon: beacon,
       ac: authClient,
       setNextResponse: setNextResponse,
-      successSpy: successSpy
+      successSpy: successSpy,
+      errorSpy: errorSpy
     });
   }
 
@@ -207,6 +210,23 @@ function (Q, OktaAuth, LoginUtil, Okta, Util, AuthContainer, PrimaryAuthForm, Be
       transformUsername(name);
     }
     return name;
+  }
+
+  function expectErrorEvent(spy, code, err) {
+    expect(spy.calls.count()).toBe(1);
+    expect(spy.calls.allArgs()[0]).toEqual([
+      {
+        statusCode: code,
+        error: jasmine.objectContaining({
+          name: 'AuthApiError',
+          message: err
+        })
+      },
+      {
+        controller: 'primary-auth',
+        stateToken: undefined
+      }
+    ]);
   }
 
   var setupWithTransformUsername = _.partial(setup, {username: 'foobar', transformUsername: transformUsername});
@@ -1818,6 +1838,19 @@ function (Q, OktaAuth, LoginUtil, Okta, Util, AuthContainer, PrimaryAuthForm, Be
             .toBe('You exceeded the maximum number of requests. Try again in a while.');
         });
       });
+      itp('emits an error event when receiving a throttle error message', function () {
+        return setup()
+        .then(function (test) {
+          test.setNextResponse(resThrottle);
+          test.form.setUsername('testuser');
+          test.form.setPassword('testpass');
+          test.form.submit();
+          return Expect.waitForFormError(test.form, test);
+        })
+        .then(function (test) {
+          expectErrorEvent(test.errorSpy, 429, 'API call exceeded rate limit due to too many requests.');
+        });
+      });
       itp('shows an error if authClient returns with an error that is plain text', function () {
         return setup()
         .then(function (test) {
@@ -1832,6 +1865,19 @@ function (Q, OktaAuth, LoginUtil, Okta, Util, AuthContainer, PrimaryAuthForm, Be
           expect(test.form.errorMessage()).toBe('Sign in failed!');
         });
       });
+      itp('emits an error if authClient returns with an error that is plain text', function () {
+        return setup()
+        .then(function (test) {
+          test.setNextResponse(resNonJson, true);
+          test.form.setUsername('testuser');
+          test.form.setPassword('invalidpass');
+          test.form.submit();
+          return Expect.waitForFormError(test.form, test);
+        })
+        .then(function (test) {
+          expectErrorEvent(test.errorSpy, 401, 'Authentication failed');
+        });
+      });
       itp('shows an error if authClient returns with an error that is plain text and not a valid json', function () {
         return setup()
         .then(function (test) {
@@ -1844,6 +1890,19 @@ function (Q, OktaAuth, LoginUtil, Okta, Util, AuthContainer, PrimaryAuthForm, Be
         .then(function (test) {
           expect(test.form.hasErrors()).toBe(true);
           expect(test.form.errorMessage()).toBe('There was an unexpected internal error. Please try again.');
+        });
+      });
+      itp('emits an error if authClient returns with an error that is plain text and not a valid json', function () {
+        return setup()
+        .then(function (test) {
+          test.form.setUsername('testuser');
+          test.form.setPassword('invalidpass');
+          test.setNextResponse(resInvalidText, true);
+          test.form.submit();
+          return Expect.waitForFormError(test.form, test);
+        })
+        .then(function (test) {
+          expectErrorEvent(test.errorSpy, 401, 'Unknown error');
         });
       });
       itp('shows an error if authClient returns with LOCKED_OUT response and selfServiceUnlock is off', function () {

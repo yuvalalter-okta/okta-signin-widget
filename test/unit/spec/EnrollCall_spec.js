@@ -32,12 +32,14 @@ function (Q, Okta, OktaAuth, LoginUtil, Util, Form, Beacon, Expect, $sandbox,
       var setNextResponse = Util.mockAjax();
       var baseUrl = 'https://foo.com';
       var authClient = new OktaAuth({url: baseUrl, transformErrorXHR: LoginUtil.transformErrorXHR});
+      var errorSpy = jasmine.createSpy('errorSpy');
       var router = new Router({
         el: $sandbox,
         baseUrl: baseUrl,
         authClient: authClient,
         'features.router': startRouter
       });
+      router.on('error', errorSpy);
       Util.registerRouter(router);
       Util.mockRouterNavigate(router, startRouter);
       return tick()
@@ -53,7 +55,8 @@ function (Q, Okta, OktaAuth, LoginUtil, Util, Form, Beacon, Expect, $sandbox,
           beacon: new Beacon($sandbox),
           form: new Form($sandbox),
           ac: authClient,
-          setNextResponse: setNextResponse
+          setNextResponse: setNextResponse,
+          errorSpy: errorSpy
         });
       });
     }
@@ -261,6 +264,25 @@ function (Q, Okta, OktaAuth, LoginUtil, Util, Form, Beacon, Expect, $sandbox,
           Expect.isNotVisible(test.form.submitButton());
           expect(test.form.hasErrors()).toBe(true);
           expect(test.form.errorMessage()).toBe('Invalid Phone Number.');
+        });
+      });
+      itp('shows error and does not go to next step if error response', function () {
+        return setupAndSendInvalidCode().then(function (test) {
+          expectCallButton(test);
+          expect(test.errorSpy.calls.count()).toBe(1);
+          expect(test.errorSpy.calls.allArgs()[0]).toEqual([
+            {
+              statusCode: 400,
+              error: jasmine.objectContaining({
+                name: 'AuthApiError',
+                message: 'Api validation failed: factorEnrollRequest'
+              })
+            },
+            {
+              controller: jasmine.any(Function),
+              stateToken: 'testStateToken'
+            }
+          ]);
         });
       });
     });
@@ -535,6 +557,32 @@ function (Q, Okta, OktaAuth, LoginUtil, Util, Form, Beacon, Expect, $sandbox,
         .then(function (test) {
           expect(test.form.hasErrors()).toBe(true);
           expect(test.form.errorMessage()).toBe('Your token doesn\'t match our records. Please try again.');
+        });
+      });
+      itp('shows error if error response on verification', function () {
+        return setupAndSendValidCode()
+        .then(function (test) {
+          Q.stopUnhandledRejectionTracking();
+          test.setNextResponse(resActivateError);
+          test.form.setCode(123);
+          test.form.submit();
+          return tick(test);
+        })
+        .then(function (test) {
+          expect(test.errorSpy.calls.count()).toBe(1);
+          expect(test.errorSpy.calls.allArgs()[0]).toEqual([
+            {
+              statusCode: 403,
+              error: jasmine.objectContaining({
+                name: 'AuthApiError',
+                message: 'Invalid Passcode/Answer'
+              })
+            },
+            {
+              controller: jasmine.any(Function),
+              stateToken: 'testStateToken'
+            }
+          ]);
         });
       });
     });

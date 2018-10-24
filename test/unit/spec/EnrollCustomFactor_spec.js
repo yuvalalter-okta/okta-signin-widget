@@ -29,7 +29,7 @@ function (Okta,
           responseMfaEnrollActivateCustomOidc,
           resNoPermissionError,
           responseSuccess) {
-  
+
   var SharedUtil = Okta.internal.util.Util;
   var itp = Expect.itp;
   var tick = Expect.tick;
@@ -41,12 +41,14 @@ function (Okta,
       var baseUrl = 'https://foo.com';
       var authClient = new OktaAuth({url: baseUrl, transformErrorXHR: LoginUtil.transformErrorXHR});
       var successSpy = jasmine.createSpy('success');
+      var errorSpy = jasmine.createSpy('errorSpy');
       var router = new Router({
         el: $sandbox,
         baseUrl: baseUrl,
         authClient: authClient,
         globalSuccessFn: successSpy
       });
+      router.on('error', errorSpy);
       Util.registerRouter(router);
       Util.mockRouterNavigate(router);
       return tick()
@@ -66,7 +68,8 @@ function (Okta,
           form: new Form($sandbox),
           ac: authClient,
           setNextResponse: setNextResponse,
-          successSpy: successSpy
+          successSpy: successSpy,
+          errorSpy: errorSpy
         });
       });
     }
@@ -130,6 +133,30 @@ function (Okta,
             expect(test.form.hasErrors()).toBe(true);
             expect(test.form.errorMessage())
               .toBe('You do not have permission to perform the requested action');
+          });
+        });
+
+        itp('emits an error when error response received', function () {
+          return setup().then(function (test) {
+            test.setNextResponse(resNoPermissionError);
+            test.form.submit();
+            return Expect.waitForFormError(test.form, test);
+          })
+          .then(function (test) {
+            expect(test.errorSpy.calls.count()).toBe(1);
+            expect(test.errorSpy.calls.allArgs()[0]).toEqual([
+              {
+                statusCode: 403,
+                error: jasmine.objectContaining({
+                  name: 'AuthApiError',
+                  message: 'You do not have permission to perform the requested action'
+                })
+              },
+              {
+                controller: 'enroll-custom-factor',
+                stateToken: 'testStateToken'
+              }
+            ]);
           });
         });
       });

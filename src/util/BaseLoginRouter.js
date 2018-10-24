@@ -116,6 +116,24 @@ function (Okta, BrowserFeatures, Settings,
       });
 
       this.listenTo(this.appState, 'change:transactionError', function (appState, err) {
+        if (err && !err.stack) {
+          // For u2f errors, we're not wrapping these as Error types. We need to
+          // convert the err type to U2FError.
+          // TODO: For the next major release, move this to EnrollU2FController
+          err = new Errors.EnrollU2FError(err);
+        }
+        var transaction = appState.get('transaction') && appState.get('transaction').data;
+        this.trigger(
+          'error',
+          {
+            statusCode: err.xhr && err.xhr.status,
+            error: err
+          },
+          {
+            controller: this.controller && this.controller.className,
+            stateToken: transaction && transaction.stateToken
+          }
+        );
         RouterUtil.routeAfterAuthStatusChange(this, err);
       });
 

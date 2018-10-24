@@ -42,7 +42,18 @@ define(['okta', './Enums'], function (Okta, Enums) {
   }
   AuthStopPollInitiationError.prototype = new Error();
 
+  function EnrollU2FError(err) {
+    this.name = Enums.ENROLL_U2F_ERROR;
+    this.message = err.xhr.responseJSON.errorSummary;
+    this.errorSummary = err.xhr.responseJSON.errorSummary;
+    this.errorCode = err.errorCode;
+    this.xhr = err.xhr;
+    this.xhr.status = err.errorCode;
+  }
+  EnrollU2FError.prototype = new Error();
+
   return {
+    EnrollU2FError: EnrollU2FError,
     ConfigError: ConfigError,
     UnsupportedBrowserError: UnsupportedBrowserError,
     OAuthError: OAuthError,

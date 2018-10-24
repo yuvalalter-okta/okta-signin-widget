@@ -31,6 +31,7 @@ function (Q, Okta, OktaAuth, LoginUtil, Util, PasswordResetForm, Beacon, Expect,
   function setup(settings) {
     settings || (settings = {});
     var successSpy = jasmine.createSpy('successSpy');
+    var errorSpy = jasmine.createSpy('errorSpy');
     var passwordResetResponse = resPasswordReset;
     var policyComplexityDefaults = {
       minLength: 8,
@@ -95,6 +96,7 @@ function (Q, Okta, OktaAuth, LoginUtil, Util, PasswordResetForm, Beacon, Expect,
     }, settings));
     var form = new PasswordResetForm($sandbox);
     var beacon = new Beacon($sandbox);
+    router.on('error', errorSpy);
     Util.registerRouter(router);
     Util.mockRouterNavigate(router);
     Util.mockJqueryCss();
@@ -106,7 +108,8 @@ function (Q, Okta, OktaAuth, LoginUtil, Util, PasswordResetForm, Beacon, Expect,
       form: form,
       beacon: beacon,
       ac: authClient,
-      setNextResponse: setNextResponse
+      setNextResponse: setNextResponse,
+      errorSpy: errorSpy
     });
   }
 
@@ -488,6 +491,34 @@ function (Q, Okta, OktaAuth, LoginUtil, Util, PasswordResetForm, Beacon, Expect,
           ' a lowercase letter, an uppercase letter, a number, no parts of your username,' +
           ' does not include your first name, does not include your last name.'
         );
+      });
+    });
+
+    itp('triggers an error event if there is an error submitting', function () {
+      return setup()
+      .then(function (test) {
+        Q.stopUnhandledRejectionTracking();
+        test.setNextResponse(resError);
+        test.form.setNewPassword('a');
+        test.form.setConfirmPassword('a');
+        test.form.submit();
+        return tick(test);
+      })
+      .then(function (test) {
+        expect(test.errorSpy.calls.count()).toBe(1);
+        expect(test.errorSpy.calls.allArgs()[0]).toEqual([
+          {
+            statusCode: 403,
+            error: jasmine.objectContaining({
+              name: 'AuthApiError',
+              message: 'The password does not meet the complexity requirements of the current password policy.'
+            })
+          },
+          {
+            controller: 'password-reset',
+            stateToken: 'testStateToken'
+          }
+        ]);
       });
     });
   });
