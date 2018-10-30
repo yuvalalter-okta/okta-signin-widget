@@ -53,6 +53,7 @@ You can learn more on the [Okta + JavaScript][lang-landing] page in our document
   - [Bootstrapping from a recovery token](#bootstrapping-from-a-recovery-token)
   - [Feature flags](#feature-flags)
 - [Events](#events)
+  - [beforeNavigation](#beforenavigation)
   - [afterNavigation](#afternavigation)
   - [pageRendered](#pagerendered)
   - [passwordRevealed](#passwordrevealed)
@@ -1319,6 +1320,24 @@ features: {
 ## Events
 
 Events published by the widget. Subscribe to these events using [on](#onevent-callback-context).
+
+### beforeNavigation
+
+Triggered when the widget is transitioning between pages. Returns `to` and `from` objects containing the following properties:
+
+- `to`
+  - **controller** - Controller name the widget is navigating to
+- `from`
+  - **controller** - Current controller name
+
+```javascript
+// Log a message when the user transitions from primary auth and MFA verify
+signIn.on('beforeNavigation', function (to, from) {
+  if (to.controller === 'mfa-verify' && from.controller === 'primary-auth') {
+    console.log('Attempting MFA Verify');
+  }
+});
+```
 
 ### afterNavigation
 

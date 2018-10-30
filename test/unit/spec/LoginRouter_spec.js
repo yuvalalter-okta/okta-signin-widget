@@ -72,6 +72,7 @@ function (Okta, Q, Logger, OktaAuth, Util, Expect, Router,
       var authClient = new OktaAuth({url: baseUrl, headers: {}});
       var eventSpy = jasmine.createSpy('eventSpy');
       var afterNavSpy = jasmine.createSpy('afterNavSpy');
+      var beforeNavSpy = jasmine.createSpy('beforeNavSpy');
       var router = new Router(_.extend({
         el: $sandbox,
         baseUrl: baseUrl,
@@ -80,6 +81,7 @@ function (Okta, Q, Logger, OktaAuth, Util, Expect, Router,
       Util.registerRouter(router);
       router.on('pageRendered', eventSpy);
       router.on('afterNavigation', afterNavSpy);
+      router.on('beforeNavigation', beforeNavSpy);
       spyOn(authClient.token, 'getWithoutPrompt').and.callThrough();
       spyOn(authClient.token.getWithRedirect, '_setLocation');
       return tick({
@@ -87,7 +89,8 @@ function (Okta, Q, Logger, OktaAuth, Util, Expect, Router,
         ac: authClient,
         setNextResponse: setNextResponse,
         eventSpy: eventSpy,
-        afterNavSpy: afterNavSpy
+        afterNavSpy: afterNavSpy,
+        beforeNavSpy: beforeNavSpy
       });
     }
 
@@ -960,6 +963,16 @@ function (Okta, Q, Logger, OktaAuth, Util, Expect, Router,
           expect(test.afterNavSpy).toHaveBeenCalledWith({ controller: 'primary-auth' });
         });
       });
+      itp('does not trigger a beforeNavigation event when first controller is loaded', function() {
+        return setup()
+        .then(function (test) {
+          test.router.primaryAuth();
+          return Expect.waitForPrimaryAuth(test);
+        })
+        .then(function(test){
+          expect(test.beforeNavSpy.calls.count()).toBe(0);
+        });
+      });
       itp('triggers a pageRendered event when navigating to a new controller', function() {
         return setup()
         .then(function (test) {
@@ -996,6 +1009,67 @@ function (Okta, Q, Logger, OktaAuth, Util, Expect, Router,
           // as well as after render, we expect two calls
           expect(test.afterNavSpy.calls.count()).toBe(2);
           expect(test.afterNavSpy.calls.allArgs()[1]).toEqual([{ controller: 'forgot-password' }]);
+        });
+      });
+      itp('triggers a beforeNavigation event when navigating between primary auth and forgot password', function() {
+        return setup()
+        .then(function (test) {
+          test.router.primaryAuth();
+          return Expect.waitForPrimaryAuth(test);
+        })
+        .then(function(test) {
+          Util.mockRouterNavigate(test.router);
+          test.router.navigate('signin/forgot-password');
+          return Expect.waitForForgotPassword(test);
+        })
+        .then(function (test) {
+          expect(test.beforeNavSpy.calls.count()).toBe(1);
+          expect(test.beforeNavSpy.calls.allArgs()[0]).toEqual([
+            { controller: 'forgot-password' },
+            { controller: 'primary-auth' }
+          ]);
+          test.router.primaryAuth();
+          return Expect.waitForPrimaryAuth(test);
+        })
+        .then(function (test) {
+          expect(test.beforeNavSpy.calls.count()).toBe(2);
+          expect(test.beforeNavSpy.calls.allArgs()[1]).toEqual([
+            { controller: 'primary-auth' },
+            { controller: 'forgot-password' }
+          ]);
+        });
+      });
+      itp('triggers a beforeNavigation event when navigating between primary auth and mfa verify', function() {
+        return setup()
+        .then(function (test) {
+          test.router.primaryAuth();
+          return Expect.waitForPrimaryAuth(test);
+        })
+        .then(function(test) {
+          Util.mockRouterNavigate(test.router);
+          test.setNextResponse(resMfaRequiredOktaVerify);
+          var form = new PrimaryAuthForm($sandbox);
+          expect(form.isPrimaryAuth()).toBe(true);
+          form.setUsername('testuser');
+          form.setPassword('pass');
+          form.submit();
+          return Expect.waitForMfaVerify(test);
+        })
+        .then(function (test) {
+          expect(test.beforeNavSpy.calls.count()).toBe(1);
+          expect(test.beforeNavSpy.calls.allArgs()[0]).toEqual([
+            { controller: 'mfa-verify' },
+            { controller: 'primary-auth' }
+          ]);
+          test.router.primaryAuth();
+          return Expect.waitForPrimaryAuth(test);
+        })
+        .then(function (test) {
+          expect(test.beforeNavSpy.calls.count()).toBe(2);
+          expect(test.beforeNavSpy.calls.allArgs()[1]).toEqual([
+            { controller: 'primary-auth' },
+            { controller: 'mfa-verify' }
+          ]);
         });
       });
     });

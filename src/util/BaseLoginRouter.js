@@ -231,6 +231,14 @@ function (Okta, BrowserFeatures, Settings,
           return;
         }
 
+        // Emit a beforeNavigation event with the current and next controller name
+        // signIn.on('beforeNavigation', (to, from) = {});
+        this.trigger(
+          'beforeNavigation',
+          { controller: this.controller.className },
+          { controller: oldController.className }
+        );
+
         return Animations.swapPages({
           $parent: this.el,
           $oldRoot: oldController.$el,
