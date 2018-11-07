@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-/* eslint max-params: [2, 50] */
+/* eslint max-params: [2, 54] */
 define([
   'util/BaseLoginRouter',
   'IDPDiscoveryController',
@@ -21,6 +21,8 @@ define([
   'VerifyU2FController',
   'VerifyWebauthnController',
   'VerifyCustomFactorController',
+  'VerifyVideoFactorController',
+  'VerifyAudioFactorController',
   'EnrollChoicesController',
   'EnrollDuoController',
   'EnrollQuestionController',
@@ -33,6 +35,8 @@ define([
   'EnrollU2FController',
   'EnrollWebauthnController',
   'EnrollCustomFactorController',
+  'EnrollVideoFactorController',
+  'EnrollAudioFactorController',
   'BarcodeTotpController',
   'BarcodePushController',
   'ActivateTotpController',
@@ -68,6 +72,8 @@ function (BaseLoginRouter,
           VerifyU2FController,
           VerifyWebauthnController,
           VerifyCustomFactorController,
+          VerifyVideoFactorController,
+          VerifyAudioFactorController,
           EnrollChoicesController,
           EnrollDuoController,
           EnrollQuestionController,
@@ -80,6 +86,8 @@ function (BaseLoginRouter,
           EnrollU2FController,
           EnrollWebauthnController,
           EnrollCustomFactorController,
+          EnrollVideoFactorController,
+          EnrollAudioFactorController,
           BarcodeTotpController,
           BarcodePushController,
           ActivateTotpController,
@@ -115,6 +123,8 @@ function (BaseLoginRouter,
       'signin/verify/fido/u2f': 'verifyU2F',
       'signin/verify/generic_saml/assertion:saml2': 'verifySAMLFactor',
       'signin/verify/generic_oidc/assertion:oidc': 'verifyOIDCFactor',
+      'signin/verify/voiceit/video': 'verifyVideoFactor',
+      'signin/verify/voiceit/audio': 'verifyAudioFactor',
       'signin/verify/:provider/:factorType': 'verify',
       'signin/enroll': 'enrollChoices',
       'signin/enroll/duo/web': 'enrollDuo',
@@ -130,6 +140,8 @@ function (BaseLoginRouter,
       'signin/enroll/fido/u2f': 'enrollU2F',
       'signin/enroll/generic_saml/assertion:saml2': 'enrollSAMLFactor',
       'signin/enroll/generic_oidc/assertion:oidc': 'enrollOIDCFactor',
+      'signin/enroll/voiceit/video': 'enrollVideoFactor',
+      'signin/enroll/voiceit/audio': 'enrollAudioFactor',
       'signin/enroll/:provider/:factorType': 'enrollTotpFactor',
       'signin/enroll-activate/okta/push': 'scanBarcodePushFactor',
       'signin/enroll-activate/okta/push/manual': 'manualSetupPushFactor',
@@ -228,6 +240,22 @@ function (BaseLoginRouter,
         factorType: 'assertion:oidc',
         Beacon: FactorBeacon
       });
+    },
+
+    verifyVideoFactor: function () {
+        this.render(VerifyVideoFactorController, {
+            provider: 'voiceit',
+            factorType: 'video',
+            Beacon: FactorBeacon
+        });
+    },
+
+    verifyAudioFactor: function () {
+        this.render(VerifyAudioFactorController, {
+            provider: 'voiceit',
+            factorType: 'audio',
+            Beacon: FactorBeacon
+        });
     },
 
     verify: function (provider, factorType) {
