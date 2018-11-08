@@ -76,6 +76,11 @@ function (Okta, FormController, FactorUtil, Footer, TextBox) {
             params: {
               innerTooltip: Okta.loc('mfa.challenge.answer.tooltip', 'login')
             }
+          },
+          {
+           label: false,
+           'label-top': true,
+           placeholder: Okta.loc('', 'login,'),
           }
         ];
       }

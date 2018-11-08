@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-/* eslint complexity: [2, 19], max-statements: [2, 36] */
+/* eslint complexity: [2, 20], max-statements: [2, 38] */
 define([
   'okta'
 ],
@@ -124,6 +124,12 @@ function (Okta) {
       description: 'factor.customFactor.description',
       iconClassName: 'mfa-custom-factor',
       sortOrder: 16
+    },
+    'VOICEIT': {
+      label: '',
+        description: 'factor.videoFactor.description',
+        iconClassName: 'mfa-custom-factor',
+        sortOrder: 17
     }
   };
 
@@ -182,6 +188,9 @@ function (Okta) {
     }
     if (provider === 'GENERIC_OIDC' && factorType === 'assertion:oidc') {
       return 'GENERIC_OIDC';
+    }
+    if (provider === 'VOICEIT' && factorType === 'video') {
+        return 'VOICEIT';
     }
   };
 
