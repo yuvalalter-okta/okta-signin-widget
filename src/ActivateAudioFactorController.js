@@ -49,9 +49,9 @@ function (Okta, FormController, FormType, Footer) {
           '__provider__': ['string', false, this.options.provider]
         },
         save: function () {
-          // RECORD
-          // UPLOAD WAV
-          var resourcePath = 'fakepath'; // RESOURCE ID
+          // record
+          // upload
+          // get resource id
           return this.doTransaction(function(transaction) {
             var resourcePath = this.get('recordings').pop();
             return transaction.activate({
@@ -79,6 +79,11 @@ function (Okta, FormController, FormType, Footer) {
     fetchInitialData: function () {
       var self = this;
       return this.model.manageTransaction(function(transaction) {
+        self.model.set('recordings', [
+          '/Users/kenwang/Desktop/zoos/1.wav',
+          '/Users/kenwang/Desktop/zoos/2.wav',
+          '/Users/kenwang/Desktop/zoos/3.wav'
+        ]);
         self.model.set('phrase', transaction.factor.profile.phrase);
         self.model.set('recordings_left', 3 - transaction.factor.profile.recordings);
       });
