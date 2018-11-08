@@ -17,7 +17,6 @@ define(['okta', 'util/Enums'], function (Okta, Enums) {
       <a href="#" class="link help js-back" data-se="back-link">\
         {{i18n code="mfa.backToFactors" bundle="login"}}\
       </a>\
-      <img src="https://webaudiodemos.appspot.com/AudioRecorder/img/mic128.png" alt="MIC!!!">\
     ',
     className: 'auth-footer',
     events: {

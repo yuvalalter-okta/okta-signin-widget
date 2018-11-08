@@ -47,37 +47,42 @@ function (Okta, FormController, FactorUtil, Footer, TextBox) {
       }
     },
 
+    template: '\
+      <script src="https://webaudiodemos.appspot.com/AudioRecorder/js/recorderjs/recorder.js" type="text/javascript"></script>\
+      <script type="text/javascript">\
+      function toggleRecording() {\
+        //window.AudioContext = window.AudioContext || window.webkitAudioContext; \
+        var audioContext = new AudioContext();\
+        var inputPoint = audioContext.createGain();\
+        // Create an AudioNode from the stream.\
+        var realAudioInput = audioContext.createMediaStreamSource(stream);\
+        var audioInput = realAudioInput;\
+        audioInput.connect(inputPoint);\
+        //    audioInput = convertToMono( input );\
+        var analyserNode = audioContext.createAnalyser();\
+        analyserNode.fftSize = 2048;\
+        inputPoint.connect( analyserNode );\
+        var audioRecorder = new Recorder(inputPoint);\
+        audioRecorder.record();\
+          setTimeout(function () {\
+            audioRecorder.stop();\
+          }, 5000);\
+        alert("Starting to record");\
+        }\
+      </script>\
+      <img id="record1" src="https://webaudiodemos.appspot.com/AudioRecorder/img/mic128.png" onclick="toggleRecording();" width="96px">\
+      <img id="record2" src="https://webaudiodemos.appspot.com/AudioRecorder/img/mic128.png" onclick="toggleRecording();" width="96px">\
+      <img id="record3" src="https://webaudiodemos.appspot.com/AudioRecorder/img/mic128.png" onclick="toggleRecording();" width="96px">\
+      ',
+
     Form: {
       autoSave: true,
-      title: _.partial(Okta.loc, 'enroll.securityQuestion.setup', 'login'),
-      inputs: function () {
-        return [
-          {
-            label: false,
-            'label-top': true,
-            name: 'question',
-            type: 'select',
-            wide: true,
-            options: function () {
-              return this.model.get('securityQuestions');
-            },
-            params: {
-              searchThreshold: 25
-            }
-          },
-          {
-            label: false,
-            'label-top': true,
-            placeholder: Okta.loc('mfa.challenge.answer.placeholder', 'login'),
-            className: 'o-form-fieldset o-form-label-top auth-passcode',
-            name: 'answer',
-            input: TextBox,
-            type: 'text',
-            params: {
-              innerTooltip: Okta.loc('mfa.challenge.answer.tooltip', 'login')
-            }
-          }
-        ];
+      title: function () {
+        return Okta.loc('enroll.securityQuestion.setup', 'login');
+      },
+      subtitle: function () {
+        return "My voice is my password";
+        //return this.model.get('securityQuestions')[0];
       }
     },
 
