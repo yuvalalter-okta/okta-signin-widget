@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-/* eslint max-params: [2, 54] */
+/* eslint max-params: [2, 56] */
 define([
   'util/BaseLoginRouter',
   'IDPDiscoveryController',
@@ -23,6 +23,8 @@ define([
   'VerifyCustomFactorController',
   'VerifyVideoFactorController',
   'VerifyAudioFactorController',
+  'ActivateVideoFactorController',
+  'ActivateAudioFactorController',
   'EnrollChoicesController',
   'EnrollDuoController',
   'EnrollQuestionController',
@@ -74,6 +76,8 @@ function (BaseLoginRouter,
           VerifyCustomFactorController,
           VerifyVideoFactorController,
           VerifyAudioFactorController,
+          ActivateVideoFactorController,
+          ActivateAudioFactorController,
           EnrollChoicesController,
           EnrollDuoController,
           EnrollQuestionController,
@@ -123,12 +127,16 @@ function (BaseLoginRouter,
       'signin/verify/fido/u2f': 'verifyU2F',
       'signin/verify/generic_saml/assertion:saml2': 'verifySAMLFactor',
       'signin/verify/generic_oidc/assertion:oidc': 'verifyOIDCFactor',
-      'signin/verify/voiceit/video': 'verifyVideoFactor',
-      'signin/verify/voiceit/audio': 'verifyAudioFactor',
+      'signin/verify/voice_it/bio:face': 'verifyVideoFactor',
+      'signin/verify/voice_it/bio:voice': 'verifyAudioFactor',
       'signin/verify/:provider/:factorType': 'verify',
       'signin/enroll': 'enrollChoices',
       'signin/enroll/duo/web': 'enrollDuo',
       'signin/enroll/okta/question': 'enrollQuestion',
+      'signin/enroll/voice_it/bio:voice': 'enrollBioVoice',
+      'signin/enroll/voice_it/bio:face': 'enrollFace',
+      'signin/enroll-activate/voice_it/bio:voice': 'activateAudioFactor',
+      'signin/enroll-activate/voice_it/bio:face': 'activateVideoFactor',
       'signin/enroll/okta/sms': 'enrollSms',
       'signin/enroll/okta/call': 'enrollCall',
       'signin/enroll-activate/okta/sms': 'enrollSms',
@@ -140,8 +148,6 @@ function (BaseLoginRouter,
       'signin/enroll/fido/u2f': 'enrollU2F',
       'signin/enroll/generic_saml/assertion:saml2': 'enrollSAMLFactor',
       'signin/enroll/generic_oidc/assertion:oidc': 'enrollOIDCFactor',
-      'signin/enroll/voiceit/video': 'enrollVideoFactor',
-      'signin/enroll/voiceit/audio': 'enrollAudioFactor',
       'signin/enroll/:provider/:factorType': 'enrollTotpFactor',
       'signin/enroll-activate/okta/push': 'scanBarcodePushFactor',
       'signin/enroll-activate/okta/push/manual': 'manualSetupPushFactor',
@@ -244,16 +250,16 @@ function (BaseLoginRouter,
 
     verifyVideoFactor: function () {
         this.render(VerifyVideoFactorController, {
-            provider: 'voiceit',
-            factorType: 'video',
+            provider: 'VOICE_IT',
+            factorType: 'bio:face',
             Beacon: FactorBeacon
         });
     },
 
     verifyAudioFactor: function () {
         this.render(VerifyAudioFactorController, {
-            provider: 'voiceit',
-            factorType: 'audio',
+            provider: 'VOICE_IT',
+            factorType: 'bio:voice',
             Beacon: FactorBeacon
         });
     },
@@ -282,6 +288,22 @@ function (BaseLoginRouter,
       this.render(EnrollQuestionController, {
         provider: 'OKTA',
         factorType: 'question',
+        Beacon: FactorBeacon
+      });
+    },
+
+    enrollBioVoice: function () {
+      this.render(EnrollAudioFactorController, {
+        provider: 'VOICE_IT',
+        factorType: 'bio:voice',
+        Beacon: FactorBeacon
+      });
+    },
+
+    enrollFace: function () {
+      this.render(EnrollVideoFactorController, {
+        provider: 'VOICE_IT',
+        factorType: 'bio:face',
         Beacon: FactorBeacon
       });
     },
@@ -400,6 +422,22 @@ function (BaseLoginRouter,
 
     activateTotpFactor: function (provider, factorType) {
       this.render(ActivateTotpController, {
+        provider: provider.toUpperCase(),
+        factorType: factorType,
+        Beacon: FactorBeacon
+      });
+    },
+
+    activateAudioFactor: function (provider, factorType) {
+      this.render(ActivateAudioFactorController, {
+        provider: provider.toUpperCase(),
+        factorType: factorType,
+        Beacon: FactorBeacon
+      });
+    },
+
+    activateVideoFactor: function (provider, factorType) {
+      this.render(ActivateVideoFactorController, {
         provider: provider.toUpperCase(),
         factorType: factorType,
         Beacon: FactorBeacon
