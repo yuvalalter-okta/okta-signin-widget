@@ -57,7 +57,7 @@ function (Okta, FormController, FormType, Footer) {
       ]);
       return {
         autoSave: true,
-        title: 'Voice Biometrics',
+        title: 'Face Biometrics',
         save: 'Record',
         subtitle: this.model.get('subtitles')[this.model.get('recordings')],
         attributes: { 'data-se': 'factor-video' }
