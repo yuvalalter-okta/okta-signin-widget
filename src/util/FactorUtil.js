@@ -125,11 +125,17 @@ function (Okta) {
       iconClassName: 'mfa-custom-factor',
       sortOrder: 16
     },
-    'VOICEIT': {
+    'BIO_VOICE': {
+      label: '',
+        description: 'factor.audioFactor.description',
+        iconClassName: 'mfa-custom-factor',
+        sortOrder: 17
+    },
+    'FACE': {
       label: '',
         description: 'factor.videoFactor.description',
         iconClassName: 'mfa-custom-factor',
-        sortOrder: 17
+        sortOrder: 18
     }
   };
 
@@ -189,8 +195,11 @@ function (Okta) {
     if (provider === 'GENERIC_OIDC' && factorType === 'assertion:oidc') {
       return 'GENERIC_OIDC';
     }
-    if (provider === 'VOICEIT' && factorType === 'video') {
-        return 'VOICEIT';
+    if (provider === 'VOICE_IT' && factorType === 'bio:voice') {
+        return 'BIO_VOICE';
+    }
+    if (provider === 'VOICE_IT' && factorType === 'bio:face') {
+        return 'FACE';
     }
   };
 

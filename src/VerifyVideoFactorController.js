@@ -15,33 +15,18 @@ function (Okta, FormController, FooterSignout, FactorUtil) {
 
     Model: {
       props: {
-        rememberDevice: 'boolean'
-      },
-
-      initialize: function () {
-        var rememberDevice = FactorUtil.getRememberDeviceValue(this.appState);
-        // set the initial value for remember device (Cannot do this while defining the
-        // local property because this.settings would not be initialized there yet).
-        this.set('rememberDevice', rememberDevice);
+        resourcePath: ['string']
       },
 
       save: function () {
-        var rememberDevice = !!this.get('rememberDevice');
         return this.manageTransaction((transaction, setTransaction) => {
-          var data = {
-            rememberDevice: rememberDevice
-          };
           var factor = _.findWhere(transaction.factors, {
             provider: this.get('provider'),
             factorType: this.get('factorType')
           });
-          return factor.verify(data)
+          return factor.verify({resourcePath, resourcePath})
           .then((trans) => {
             setTransaction(trans);
-            var url = this.appState.get('verifyVideoFactorRedirectUrl');
-            if(url !== null) {
-              Util.redirect(url);
-            }
           })
           .fail(function (err) {
             throw err;
@@ -66,16 +51,6 @@ function (Okta, FormController, FooterSignout, FactorUtil) {
         subtitle: subtitle,
         attributes: { 'data-se': 'factor-video' },
         initialize: function () {
-          if (this.options.appState.get('allowRememberDevice')) {
-            this.addInput({
-              label: false,
-              'label-top': true,
-              placeholder: this.options.appState.get('rememberDeviceLabel'),
-              className: 'margin-btm-0',
-              name: 'rememberDevice',
-              type: 'checkbox'
-            });
-          }
         }
       };
     },

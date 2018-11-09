@@ -11,60 +11,62 @@ function (Okta, FormController, Footer) {
   return FormController.extend({
     className: 'enroll-audio-factor',
     Model: {
+      props: {
+        phrase: 'string'
+      },
       local: {
-        provider: 'string',
-        factorType: 'string'
+        phrases: 'array'
       },
       save: function () {
-        return this.manageTransaction((transaction, setTransaction) => {
+        return this.doTransaction(function(transaction) {
           var factor = _.findWhere(transaction.factors, {
-            provider: this.get('provider'),
-            factorType: this.get('factorType')
+            factorType: 'bio:voice',
+            provider: 'VOICE_IT'
           });
-          return factor.enroll()
-          .then((trans) => {
-            setTransaction(trans);
-            var url = this.appState.get('enrollAudioFactorRedirectUrl');
-            if(url !== null) {
-              Util.redirect(url);
+          return factor.enroll({
+            profile: {
+              phrase: this.get('phrases')[this.get('phrase')]
             }
-          })
-          .fail(function (err) {
-            throw err;
           });
         });
       }
     },
 
-    Form: function() {
-      var factors = this.options.appState.get('factors');
-      var factor = factors.findWhere({
-        provider: this.options.provider,
-        factorType: this.options.factorType
-      });
-      var vendorName = factor.get('vendorName');
-      var subtitle = Okta.loc('enroll.AudioFactor.subtitle', 'login', [vendorName]);
-      var saveText = Okta.loc('enroll.AudioFactor.save', 'login');
-      return {
-        autoSave: true,
-        title: vendorName,
-        subtitle: subtitle,
-        save: saveText,
-      };
-    },
-
-    trapAuthResponse: function () {
-      if (this.options.appState.get('isMfaEnrollActivate')) {
-        return true;
+    Form: {
+      autoSave: true,
+      title: _.partial(Okta.loc, 'enroll.AudioFactor.setup', 'login'),
+      inputs: function () {
+        return [
+          {
+            label: false,
+            'label-top': true,
+            name: 'phrase',
+            type: 'select',
+            wide: true,
+            options: function () {
+              return this.model.get('phrases');
+            },
+            params: {
+              searchThreshold: 25
+            }
+          }
+        ];
       }
     },
 
-    initialize: function () {
-      this.model.set('provider', this.options.provider);
-      this.model.set('factorType', this.options.factorType);
-    },
+    Footer: Footer,
 
-    Footer: Footer
+    fetchInitialData: function () {
+      var self = this;
+      return this.model.manageTransaction(function(transaction) {
+        self.model.set('phrases', [
+          'Zoos are filled with small and large animals',
+          'Remember to wash your hands before eating',
+          'Never forget tomorrow is a new day',
+          'Today is a nice day to go for a walk'
+        ]);
+      });
+    }
 
   });
 

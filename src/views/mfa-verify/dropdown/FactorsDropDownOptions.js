@@ -230,7 +230,17 @@ define(['okta', 'util/RouterUtil'], function (Okta, RouterUtil) {
       }
     },
 
-    'VOICEIT': {
+    'BIO_VOICE': {
+        icon: 'factor-icon mfa-custom-factor-30',
+        title: function () {
+            return this.model.get('factorLabel');
+        },
+        action: function () {
+          action.call(this, this.model);
+      }
+    },
+
+    'FACE': {
         icon: 'factor-icon mfa-custom-factor-30',
         title: function () {
             return this.model.get('factorLabel');
