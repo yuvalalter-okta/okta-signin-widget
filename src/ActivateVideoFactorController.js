@@ -29,9 +29,35 @@ function (Okta, FormController, FormType, Footer) {
           resourcePath: ['string']
         },
         save: function () {
+          let blob;
           return this.doTransaction(function(transaction) {
-            // RECORD
-            // UPLOAD
+            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+              var mediaRecorder = new MediaRecorder(stream);
+              recorder.start();
+              setTimeout(function() {
+                blob = recorder.requestData();
+                recorder.stop();
+              }, 2000)
+            });
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "http://rain.okta1.com/user/factors/bio_factor/upload", true);
+            xhr.setRequestHeader("Accept", "application/json");
+            xhr.onload = function(e) { console.log(e)};
+            xhr.onreadystatechange = function() {
+              if (xhr.readyState == XMLHttpRequest.DONE) {
+                console.log(xhr.responseText);
+                var resp = JSON.parse(this.response);
+                console.log("Server got:", resp);
+                resourceId = resp.resourceId;
+                globalResourceId = resourceId;
+                console.log("Found resourceId = " + resourceId);
+              }
+            };
+            var fd = new FormData();
+            fd.append("fileData", blob);
+            xhr.send(fd);
+
             // GET RESOURCE ID
             var resourcePath = 'blah';
             return transaction.activate({
