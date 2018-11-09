@@ -97,10 +97,7 @@ function (Okta, Q, FormController, FormType, FooterSignout, FactorUtil) {
         title: 'Face Biometrics',
         save: 'Record',
         subtitle: 'Please record your face:',
-        attributes: { 'data-se': 'factor-video' },
-        initialize: function () {
-          var factor = this.options.appState.changed.lastAuthResponse._embedded.factors.find(function(factor) { return factor.factorType === 'bio:face' });
-        }
+        attributes: { 'data-se': 'factor-video' }
       };
     },
 

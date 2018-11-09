@@ -290,7 +290,12 @@ function (Okta, Q, FormController, FormType, FooterSignout, FactorUtil) {
         subtitle: 'Please repeat the following phrase:',
         attributes: { 'data-se': 'factor-audio' },
         initialize: function () {
-          var factor = this.options.appState.changed.lastAuthResponse._embedded.factors.find(function(factor) { return factor.factorType === 'bio:voice' });
+          var factor;
+          if (!!this.options.appState.changed.lastAuthResponse) {
+            factor = this.options.appState.changed.lastAuthResponse._embedded.factors.find(function(factor) { return factor.factorType === 'bio:voice' });
+          } else {
+            factor = this.options.appState.attributes.lastAuthResponse._embedded.factors.find(function(factor) { return factor.factorType === 'bio:voice' });
+          }
           this.model.set('phrase', factor.profile.phrase);
         },
         formChildren: [
