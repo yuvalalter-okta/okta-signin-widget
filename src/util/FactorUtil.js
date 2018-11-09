@@ -222,7 +222,7 @@ function (Okta) {
     if (factorType === 'bio:voice') {
       return 'Use voice to authenticate';
     } else if (factorType === 'bio:face') {
-      return 'Use yo face to login';
+      return 'Use your face to authenticate';
     }
     return Okta.loc(key, 'login');
   };
