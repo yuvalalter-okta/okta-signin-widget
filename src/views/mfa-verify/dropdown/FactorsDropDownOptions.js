@@ -231,7 +231,7 @@ define(['okta', 'util/RouterUtil'], function (Okta, RouterUtil) {
     },
 
     'BIO_VOICE': {
-        icon: 'factor-icon mfa-custom-factor-30',
+        icon: 'factor-icon mfa-audio-verify-30',
         title: function () {
             return 'Voice Biometrics';
         },
@@ -241,7 +241,7 @@ define(['okta', 'util/RouterUtil'], function (Okta, RouterUtil) {
     },
 
     'FACE': {
-        icon: 'factor-icon mfa-custom-factor-30',
+        icon: 'factor-icon mfa-face-verify-30',
         title: function () {
             return 'Face Biometrics';
         },

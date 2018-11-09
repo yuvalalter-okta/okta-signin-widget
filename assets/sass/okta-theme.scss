@@ -560,6 +560,30 @@
     }
   }
 
+  .mfa-audio-verify,
+  .enroll-factor-row .mfa-audio-verify {
+    background-image: url('../img/icons/mfa/audio_icon.png');
+
+    @media
+    (-webkit-min-device-pixel-ratio: 2),
+    (min-resolution: 192dpi) {
+      /* -- Factor Icons (high DPI): Custom Factor -- */
+      background-image: url('../img/icons/mfa/audio_icon.png');
+    }
+  }
+
+  .mfa-video-verify,
+  .enroll-factor-row .mfa-audio-verify {
+    background-image: url('../img/icons/mfa/video_icon.png');
+
+    @media
+    (-webkit-min-device-pixel-ratio: 2),
+    (min-resolution: 192dpi) {
+      /* -- Factor Icons (high DPI): Custom Factor -- */
+      background-image: url('../img/icons/mfa/video_icon.png');
+    }
+  }
+
   .button {
   /* -- Buttons' Colors -- */
     @include light-button-template($button-bg-color);
