@@ -1,14 +1,27 @@
 define([
   'okta',
+  'q',
   'util/FormController',
   'util/FormType',
   'views/shared/FooterSignout',
   'util/FactorUtil'
 ],
-function (Okta, FormController, FormType, FooterSignout, FactorUtil) {
+function (Okta, Q, FormController, FormType, FooterSignout, FactorUtil) {
 
   var _ = Okta._;
   var { Util } = Okta.internal.util;
+
+  function disableSubmit() {
+    document.getElementsByClassName('button-primary')[0].classList.add('btn-disabled');
+    document.getElementsByClassName('button-primary')[0].classList.add('link-button-disabled');
+    document.getElementsByClassName('button-primary')[0].disabled = true;
+  }
+
+  function enabledSubmit() {
+    document.getElementsByClassName('button-primary')[0].classList.remove('btn-disabled');
+    document.getElementsByClassName('button-primary')[0].classList.remove('link-button-disabled');
+    document.getElementsByClassName('button-primary')[0].disabled = false;
+  }
 
   return FormController.extend({
 
@@ -20,19 +33,61 @@ function (Okta, FormController, FormType, FooterSignout, FactorUtil) {
       },
 
       save: function () {
-          return this.doTransaction(function(transaction) {
-            var factor = _.findWhere(transaction.factors, {
-              provider: this.get('provider'),
-              factorType: this.get('factorType')
-            });
-            // RECORD
-            // UPLOAD
-            // GET RESOURCE_ID
-            var resourcePath = 'blah';
+        disableSubmit();
+        return this.doTransaction(function(transaction) {
+
+          var deferred = Q.defer();
+          var baseUrl = this.options.settings.options.baseUrl;
+
+          navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            var mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+            setTimeout(function() {
+              var blob = mediaRecorder.requestData();
+              mediaRecorder.stop();
+            }, 2000);
+
+            var chunks = [];
+
+            mediaRecorder.ondataavailable = function(e) {
+              chunks.push(e.data);
+            }
+
+            mediaRecorder.onstop = function(e) {
+              var blob = new Blob(chunks, { 'type' : 'video/mp4' });
+              var xhr = new XMLHttpRequest();
+              xhr.open("POST", baseUrl + "/api/user/factors/bio_factor/upload", true);
+              xhr.setRequestHeader("Accept", "application/json");
+              xhr.onload = function(e) { console.log(e)};
+              xhr.onreadystatechange = function() {
+                if (xhr.readyState == XMLHttpRequest.DONE) {
+                  console.log(xhr.responseText);
+                  var resp = JSON.parse(this.response);
+                  console.log("Server got:", resp);
+                  deferred.resolve(resp.resourceId);
+                }
+              };
+              var fd = new FormData();
+              fd.append("fileData", blob);
+              xhr.send(fd);
+            }
+
+
+          });
+
+          var factor;
+          if (!!transaction.factors) {
+            factor = transaction.factors.find(function(factor) { return factor.factorType === 'bio:face' });
+          } else {
+            factor = transaction.factor;
+          }
+          
+          return deferred.promise.then(function(resourcePath) {
             return factor.verify({
               resourcePath: resourcePath
             });
           });
+        });
       }
     },
 
@@ -53,6 +108,7 @@ function (Okta, FormController, FormType, FooterSignout, FactorUtil) {
 
     trapAuthResponse: function () {
       if (this.options.appState.get('isMfaChallenge')) {
+        enabledSubmit();
         return true;
       }
     },
