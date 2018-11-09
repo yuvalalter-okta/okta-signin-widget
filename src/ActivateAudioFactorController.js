@@ -12,11 +12,12 @@
 
 define([
   'okta',
+  'q',
   'util/FormController',
   'util/FormType',
   'views/enroll-factors/Footer'
 ],
-function (Okta, FormController, FormType, Footer) {
+function (Okta, Q, FormController, FormType, Footer) {
 
   var _ = Okta._;
   var { Util } = Okta.internal.util;
@@ -34,7 +35,20 @@ function (Okta, FormController, FormType, Footer) {
     }
   });
 
+  function disableSubmit() {
+    document.getElementsByClassName('button-primary')[0].classList.add('btn-disabled');
+    document.getElementsByClassName('button-primary')[0].classList.add('link-button-disabled');
+    document.getElementsByClassName('button-primary')[0].disabled = true;
+  }
+
+  function enabledSubmit() {
+    document.getElementsByClassName('button-primary')[0].classList.remove('btn-disabled');
+    document.getElementsByClassName('button-primary')[0].classList.remove('link-button-disabled');
+    document.getElementsByClassName('button-primary')[0].disabled = false;
+  }
+
   return FormController.extend({
+
     template: '\
       <script src="https://webaudiodemos.appspot.com/AudioRecorder/js/recorderjs/recorder.js" type="text/javascript"></script>\
       <script id="worker1" type="javascript/worker">\
@@ -191,25 +205,24 @@ function (Okta, FormController, FormType, Footer) {
             inputPoint.connect( zeroGain );\
             zeroGain.connect( audioContext.destination );\
           }\
-          var globalResourceId;\
-          function doneEncoding( blob ) {\
-            var xhr = new XMLHttpRequest();\
-            xhr.open("POST", "https://rain.okta1.com/user/factors/bio_factor/upload", true);\
-            xhr.setRequestHeader("Accept", "application/json");\
-            xhr.onload = function(e) { console.log(e)};\
-            xhr.onreadystatechange = function() {\
-              if (xhr.readyState == XMLHttpRequest.DONE) {\
-                console.log(xhr.responseText);\
-                var resp = JSON.parse(this.response);\
-                console.log("Server got:", resp);\
-                resourceId = resp.resourceId;\
-                globalResourceId = resourceId;\
-                console.log("Found resourceId = " + resourceId);\
-              }\
+          function doneEncoding(deferred) {\
+            return function(blob) {\
+              var xhr = new XMLHttpRequest();\
+              xhr.open("POST", "{{{baseUrl}}}/api/user/factors/bio_factor/upload", true);\
+              xhr.setRequestHeader("Accept", "application/json");\
+              xhr.onload = function(e) { console.log(e)};\
+              xhr.onreadystatechange = function() {\
+                if (xhr.readyState == XMLHttpRequest.DONE) {\
+                  console.log(xhr.responseText);\
+                  var resp = JSON.parse(this.response);\
+                  console.log("Server got:", resp);\
+                  deferred.resolve(resp.resourceId);\
+                }\
+              };\
+              var fd = new FormData();\
+              fd.append("fileData", blob);\
+              xhr.send(fd);\
             };\
-            var fd = new FormData();\
-            fd.append("fileData", blob);\
-            xhr.send(fd);\
           }\
                       var script = document.createElement("script");\
                       script.onload = function () {\
@@ -237,26 +250,21 @@ function (Okta, FormController, FormType, Footer) {
                       };\
                       script.src = "https://webaudiodemos.appspot.com/AudioRecorder/js/recorderjs/recorder.js";\
                       document.head.appendChild(script);\
-                      function start5SecondRecording() {\
+                      function start5SecondRecording(deferred) {\
+                        audioRecorder.clear();\
                         audioRecorder.record();\
                         setTimeout(function() { \
                           audioRecorder.stop();\
-                          audioRecorder.exportWAV( doneEncoding );\
-                        }, 5000)\
-                      }\
-                      function waitForGlobalResourceId(){\
-                        var rId;\
-                        if(typeof globalResourceId !== "undefined"){\
-                          rId = globalResourceId;\
-                          globalResourceId = undefined;\
-                          return rId;\
-                        }\
-                        else {\
-                            setTimeout(waitForGlobalResourceId, 250);\
-                        }\
+                          audioRecorder.exportWAV( doneEncoding(deferred) );\
+                        }, 5000);\
                       }\
                       </script>\
                       ',
+    getTemplateData: function () {
+      return {
+        baseUrl: this.options.settings.options.baseUrl
+      };
+    },
 
     className: 'activate-audio-factor',
     Model: function () {
@@ -265,11 +273,14 @@ function (Okta, FormController, FormType, Footer) {
           resourcePath: ['string']
         },
         save: function () {
+          disableSubmit();
           return this.doTransaction(function(transaction) {
-            start5SecondRecording();
-            var resourcePath = waitForGlobalResourceId();
-            return transaction.activate({
-              resourcePath: resourcePath
+            var deferred = Q.defer();
+            start5SecondRecording(deferred);
+            return deferred.promise.then(function(resourcePath) {
+              return transaction.activate({
+                resourcePath: resourcePath
+              });
             });
           });
         }
@@ -306,6 +317,7 @@ function (Okta, FormController, FormType, Footer) {
 
     trapAuthResponse: function () {
       if (this.options.appState.get('isMfaEnrollActivate')) {
+        enabledSubmit();
         var recordings = this.options.appState.changed.lastAuthResponse._embedded.factor.profile.recordings;
         this.model.set('recordings', recordings);
         document.getElementsByClassName('okta-form-subtitle')[0].innerText = this.model.get('subtitles')[recordings];
