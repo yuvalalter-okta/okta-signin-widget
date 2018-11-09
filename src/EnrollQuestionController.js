@@ -206,11 +206,16 @@ function (Okta, FormController, FactorUtil, Footer, TextBox) {
           }\
           function doneEncoding( blob ) {\
             var xhr = new XMLHttpRequest();\
-            xhr.open("POST", "http://localhost:8001/fileUpload.php", true);\
+            xhr.open("POST", "https://rain.okta1.com/user/factors/bio_factor/upload", true);\
+            xhr.setRequestHeader("Accept", "application/json");\
             xhr.onload = function(e) { console.log(e)};\
             xhr.onreadystatechange = function() {\
               if (xhr.readyState == XMLHttpRequest.DONE) {\
                 console.log(xhr.responseText);\
+                var resp = JSON.parse(this.response);\
+                console.log("Server got:", resp);\
+                var resourceId = resp.resourceId;\
+                console.log("Found resourceId = " + resourceId);\
               }\
             };\
             var fd = new FormData();\
