@@ -288,7 +288,7 @@ function (Okta, FormController, FormType, Footer) {
       this.model.set('subtitles', [
         'Please repeat the following phrase:',
         'Please repeat the following phrase again:',
-        'Please repeat the following phrase on last time:',
+        'Please repeat the following phrase one last time:',
       ]);
       return {
         autoSave: true,
@@ -308,6 +308,7 @@ function (Okta, FormController, FormType, Footer) {
       if (this.options.appState.get('isMfaEnrollActivate')) {
         var recordings = this.options.appState.changed.lastAuthResponse._embedded.factor.profile.recordings;
         this.model.set('recordings', recordings);
+        document.getElementsByClassName('okta-form-subtitle')[0].innerText = this.model.get('subtitles')[recordings];
         return true;
       }
       return false;

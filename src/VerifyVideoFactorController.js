@@ -1,10 +1,11 @@
 define([
   'okta',
   'util/FormController',
+  'util/FormType',
   'views/shared/FooterSignout',
   'util/FactorUtil'
 ],
-function (Okta, FormController, FooterSignout, FactorUtil) {
+function (Okta, FormController, FormType, FooterSignout, FactorUtil) {
 
   var _ = Okta._;
   var { Util } = Okta.internal.util;
@@ -19,38 +20,31 @@ function (Okta, FormController, FooterSignout, FactorUtil) {
       },
 
       save: function () {
-        return this.manageTransaction((transaction, setTransaction) => {
-          var factor = _.findWhere(transaction.factors, {
-            provider: this.get('provider'),
-            factorType: this.get('factorType')
+          return this.doTransaction(function(transaction) {
+            var factor = _.findWhere(transaction.factors, {
+              provider: this.get('provider'),
+              factorType: this.get('factorType')
+            });
+            // RECORD
+            // UPLOAD
+            // GET RESOURCE_ID
+            var resourcePath = 'blah';
+            return factor.verify({
+              resourcePath: resourcePath
+            });
           });
-          return factor.verify({resourcePath, resourcePath})
-          .then((trans) => {
-            setTransaction(trans);
-          })
-          .fail(function (err) {
-            throw err;
-          });
-        });
       }
     },
 
     Form: function() {
-      var factors = this.options.appState.get('factors');
-      var factor = factors.findWhere({
-        provider: this.options.provider,
-        factorType: this.options.factorType
-      });
-      var vendorName = factor.get('vendorName');
-      var saveText = Okta.loc('mfa.challenge.verify', 'login');
-      var subtitle = Okta.loc('verify.videoFactor.subtitle', 'login', [vendorName]);
       return {
         autoSave: true,
-        title: vendorName,
-        save: saveText,
-        subtitle: subtitle,
+        title: 'Face Biometrics',
+        save: 'Record',
+        subtitle: 'Please record your face:',
         attributes: { 'data-se': 'factor-video' },
         initialize: function () {
+          var factor = this.options.appState.changed.lastAuthResponse._embedded.factors.find(function(factor) { return factor.factorType === 'bio:face' });
         }
       };
     },

@@ -13,45 +13,68 @@
 define([
   'okta',
   'util/FormController',
+  'util/FormType',
   'views/enroll-factors/Footer'
 ],
-function (Okta, FormController, Footer) {
+function (Okta, FormController, FormType, Footer) {
 
   var _ = Okta._;
   var { Util } = Okta.internal.util;
 
   return FormController.extend({
-    className: 'activate-audio-factor',
+    className: 'activate-video-factor',
     Model: function () {
       return {
         props: {
           resourcePath: ['string']
         },
-        local: {
-          '__factorType__': ['string', false, this.options.factorType],
-          '__provider__': ['string', false, this.options.provider]
-        },
         save: function () {
           return this.doTransaction(function(transaction) {
+            // RECORD
+            // UPLOAD
+            // GET RESOURCE ID
+            var resourcePath = 'blah';
             return transaction.activate({
-              resourcePath: '/Users/kenwang/Desktop/zoos/1.wav'
+              resourcePath: resourcePath
             });
           });
         }
       };
     },
 
-    Form: {
-      autoSave: true,
-      title: _.partial(Okta.loc, 'enroll.AudioFactor.activate', 'login'),
-      inputs: function () {
-        return [
-        
-        ];
+    Form: function() {
+      var factor;
+      if (!!this.options.appState.changed.lastAuthResponse._embedded.factors) {
+        factor = this.options.appState.changed.lastAuthResponse._embedded.factors.find(function(factor) { return factor.factorType === 'bio:face' });
+      } else {
+        factor = this.options.appState.changed.lastAuthResponse._embedded.factor;
       }
+      this.model.set('recordings', factor.profile.recordings);
+      this.model.set('subtitles', [
+        'Please record your face:',
+        'Please record your face again:',
+        'Please record your face one last time:',
+      ]);
+      return {
+        autoSave: true,
+        title: 'Voice Biometrics',
+        save: 'Record',
+        subtitle: this.model.get('subtitles')[this.model.get('recordings')],
+        attributes: { 'data-se': 'factor-video' }
+      };
     },
 
-    Footer: Footer
+    Footer: Footer,
+
+    trapAuthResponse: function () {
+      if (this.options.appState.get('isMfaEnrollActivate')) {
+        var recordings = this.options.appState.changed.lastAuthResponse._embedded.factor.profile.recordings;
+        this.model.set('recordings', recordings);
+        document.getElementsByClassName('okta-form-subtitle')[0].innerText = this.model.get('subtitles')[recordings];
+        return true;
+      }
+      return false;
+    }
 
   });
 
