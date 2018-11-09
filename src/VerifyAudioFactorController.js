@@ -1,13 +1,27 @@
 define([
   'okta',
   'util/FormController',
+  'util/FormType',
   'views/shared/FooterSignout',
   'util/FactorUtil'
 ],
-function (Okta, FormController, FooterSignout, FactorUtil) {
+function (Okta, FormController, FormType, FooterSignout, FactorUtil) {
 
   var _ = Okta._;
   var { Util } = Okta.internal.util;
+
+  var PhraseView = Okta.View.extend({
+    attributes: { 'data-se': 'say-phrase-attr' },
+    className: 'say-phrase-class',
+    template: '\
+      <p style="text-align:center;font-size:20px">"{{{phrase}}}"</p>\
+    ',
+    getTemplateData: function () {
+      return {
+        phrase: this.model.get('phrase')
+      };
+    }
+  });
 
   return FormController.extend({
 
@@ -36,22 +50,19 @@ function (Okta, FormController, FooterSignout, FactorUtil) {
     },
 
     Form: function() {
-      var factors = this.options.appState.get('factors');
-      var factor = factors.findWhere({
-        provider: this.options.provider,
-        factorType: this.options.factorType
-      });
-      var vendorName = factor.get('vendorName');
-      var saveText = Okta.loc('mfa.challenge.verify', 'login');
-      var subtitle = Okta.loc('verify.audioFactor.subtitle', 'login', [vendorName]);
       return {
         autoSave: true,
-        title: vendorName,
-        save: saveText,
-        subtitle: subtitle,
+        title: 'Voice Biometrics',
+        save: 'Record',
+        subtitle: 'Please repeat the following phrase:',
         attributes: { 'data-se': 'factor-audio' },
         initialize: function () {
-        }
+          var factor = this.options.appState.changed.lastAuthResponse._embedded.factors.find(function(factor) { return factor.factorType === 'bio:voice' });
+          this.model.set('phrase', factor.profile.phrase);
+        },
+        formChildren: [
+          FormType.View({View: PhraseView})
+        ]
       };
     },
 
