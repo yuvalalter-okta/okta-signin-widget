@@ -430,16 +430,16 @@ function (BaseLoginRouter,
 
     activateAudioFactor: function (provider, factorType) {
       this.render(ActivateAudioFactorController, {
-        provider: provider.toUpperCase(),
-        factorType: factorType,
+        provider: 'VOICE_IT',
+        factorType: 'bio:voice',
         Beacon: FactorBeacon
       });
     },
 
     activateVideoFactor: function (provider, factorType) {
       this.render(ActivateVideoFactorController, {
-        provider: provider.toUpperCase(),
-        factorType: factorType,
+        provider: 'VOICE_IT',
+        factorType: 'bio:face',
         Beacon: FactorBeacon
       });
     },

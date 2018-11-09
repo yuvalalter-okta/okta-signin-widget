@@ -19,10 +19,12 @@ function (Okta, FormController, Footer) {
       },
       save: function () {
         return this.doTransaction(function(transaction) {
-          var factor = _.findWhere(transaction.factors, {
-            factorType: 'bio:voice',
-            provider: 'VOICE_IT'
-          });
+          var factor;
+          if (!!transaction.factors) {
+            factor = transaction.factors.find(function(factor) { return factor.factorType === 'bio:voice' });
+          } else {
+            factor = transaction.factor;
+          }
           return factor.enroll({
             profile: {
               phrase: this.get('phrases')[this.get('phrase')]
@@ -34,7 +36,9 @@ function (Okta, FormController, Footer) {
 
     Form: {
       autoSave: true,
-      title: _.partial(Okta.loc, 'enroll.AudioFactor.setup', 'login'),
+      title: 'Voice Biometrics',
+      subtitle: 'Please select a phrase:',
+      save: 'Enroll',
       inputs: function () {
         return [
           {

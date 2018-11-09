@@ -209,11 +209,21 @@ function (Okta) {
 
   fn.getFactorLabel = function (provider, factorType) {
     var key = factorData[fn.getFactorName.apply(this, [provider, factorType])].label;
+    if (factorType === 'bio:voice') {
+      return 'Voice Biometrics';
+    } else if (factorType === 'bio:face') {
+      return 'Face Biometrics';
+    }
     return Okta.loc(key, 'login');
   };
 
   fn.getFactorDescription = function (provider, factorType) {
     var key = factorData[fn.getFactorName.apply(this, [provider, factorType])].description;
+    if (factorType === 'bio:voice') {
+      return 'Use voice to authenticate';
+    } else if (factorType === 'bio:face') {
+      return 'Use yo face to login';
+    }
     return Okta.loc(key, 'login');
   };
 
