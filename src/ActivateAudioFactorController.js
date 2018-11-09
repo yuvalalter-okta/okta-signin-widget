@@ -21,17 +21,14 @@ function (Okta, FormController, FormType, Footer) {
   var _ = Okta._;
   var { Util } = Okta.internal.util;
 
-  var SayPhraseView = Okta.View.extend({
+  var PhraseView = Okta.View.extend({
     attributes: { 'data-se': 'say-phrase-attr' },
     className: 'say-phrase-class',
     template: '\
-      <p class="instructions-title">Recordings left: {{{recordings_left}}}</p>\
-      <p class="instructions-title">Please say the following phrase:</p>\
-      <p class="instructions">{{{phrase}}}</p>\
+      <p style="text-align:center;font-size:20px">"{{{phrase}}}"</p>\
     ',
     getTemplateData: function () {
       return {
-        recordings_left: this.model.get('recordings_left'),
         phrase: this.model.get('phrase')
       };
     }
@@ -44,16 +41,12 @@ function (Okta, FormController, FormType, Footer) {
         props: {
           resourcePath: ['string']
         },
-        local: {
-          '__factorType__': ['string', false, this.options.factorType],
-          '__provider__': ['string', false, this.options.provider]
-        },
         save: function () {
-          // record
-          // upload
-          // get resource id
           return this.doTransaction(function(transaction) {
-            var resourcePath = this.get('recordings').pop();
+            // RECORD
+            // UPLOAD
+            // GET RESOURCE ID
+            var resourcePath = 'blah';
             return transaction.activate({
               resourcePath: resourcePath
             });
@@ -62,37 +55,38 @@ function (Okta, FormController, FormType, Footer) {
       };
     },
 
-    Form: {
-      autoSave: true,
-      formChildren: function () {
-        var appState = this.options.appState;
-        return [
-          FormType.View({
-            View: SayPhraseView
-          })
-        ];
+    Form: function() {
+      var factor;
+      if (!!this.options.appState.changed.lastAuthResponse._embedded.factors) {
+        factor = this.options.appState.changed.lastAuthResponse._embedded.factors.find(function(factor) { return factor.factorType === 'bio:voice' });
+      } else {
+        factor = this.options.appState.changed.lastAuthResponse._embedded.factor;
       }
+      this.model.set('recordings', factor.profile.recordings);
+      this.model.set('phrase', factor.profile.phrase);
+      this.model.set('subtitles', [
+        'Please repeat the following phrase:',
+        'Please repeat the following phrase again:',
+        'Please repeat the following phrase on last time:',
+      ]);
+      return {
+        autoSave: true,
+        title: 'Voice Biometrics',
+        save: 'Record',
+        subtitle: this.model.get('subtitles')[this.model.get('recordings')],
+        attributes: { 'data-se': 'factor-audio' },
+        formChildren: [
+          FormType.View({View: PhraseView})
+        ]
+      };
     },
 
     Footer: Footer,
 
-    fetchInitialData: function () {
-      var self = this;
-      return this.model.manageTransaction(function(transaction) {
-        self.model.set('recordings', [
-          '/Users/kenwang/Desktop/zoos/1.wav',
-          '/Users/kenwang/Desktop/zoos/2.wav',
-          '/Users/kenwang/Desktop/zoos/3.wav'
-        ]);
-        self.model.set('phrase', transaction.factor.profile.phrase);
-        self.model.set('recordings_left', 3 - transaction.factor.profile.recordings);
-      });
-    },
-
     trapAuthResponse: function () {
       if (this.options.appState.get('isMfaEnrollActivate')) {
         var recordings = this.options.appState.changed.lastAuthResponse._embedded.factor.profile.recordings;
-        this.model.set('recordings_left', 3 - recordings);
+        this.model.set('recordings', recordings);
         return true;
       }
       return false;
